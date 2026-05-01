@@ -14,34 +14,35 @@ function App() {
       : "https://backend-clbs.onrender.com";
 
   const typeFeedback = (text) => {
-  setFeedback("");
+    setFeedback("");
 
-  const words = text.split(" ");
-  let index = 0;
+    const words = text.split(" ");
+    let index = 0;
 
-  const interval = setInterval(() => {
-    setFeedback((prev) =>
-      prev ? prev + " " + words[index] : words[index]
-    );
+    const interval = setInterval(() => {
+      if (index >= words.length) {
+        clearInterval(interval);
+        return;
+      }
 
-    index++;
+      setFeedback((prev) =>
+        prev ? prev + " " + words[index] : words[index]
+      );
 
-    if (index >= words.length) {
-      clearInterval(interval);
-    }
-  }, 45);
-};
+      index++;
+    }, 45);
+  };
 
   const handleSubmit = async () => {
-  if (!studentName.trim()) {
-  setFeedback("Please enter your name before submitting.");
-  return;
-}
+    if (!studentName.trim()) {
+      setFeedback("Please enter your name before submitting.");
+      return;
+    }
 
-if (!response1.trim()) {
-  setFeedback("Please enter your answer in Text Box 1 before submitting.");
-  return;
-}
+    if (!response1.trim()) {
+      setFeedback("Please enter your answer in Text Box 1 before submitting.");
+      return;
+    }
 
     setLoading(true);
     setFeedback("");
@@ -50,13 +51,13 @@ if (!response1.trim()) {
       const res = await fetch(`${API_BASE}/analyze`, {
         method: "POST",
         headers: {
-          "Content-Type": "application/json",
+          "Content-Type": "application/json"
         },
         body: JSON.stringify({
-            student_name: studentName,
+          student_name: studentName,
           student_response_1: response1,
-          student_response_2: response2,
-        }),
+          student_response_2: response2
+        })
       });
 
       if (!res.ok) {
@@ -65,31 +66,10 @@ if (!response1.trim()) {
 
       const data = await res.json();
 
-      let cleanFeedback = "No feedback received.";
-
-      if (data.feedback) {
-        if (typeof data.feedback === "string") {
-          let cleaned = data.feedback
-            .replace(/```json/g, "")
-            .replace(/```/g, "")
-            .trim();
-
-          try {
-            const parsed = JSON.parse(cleaned);
-            cleanFeedback =
-              parsed.feedback_text || parsed.feedback || cleaned;
-          } catch {
-            cleanFeedback = cleaned;
-          }
-        } else {
-          cleanFeedback =
-            data.feedback.feedback_text ||
-            data.feedback.feedback ||
-            JSON.stringify(data.feedback);
-        }
-      } else if (data.feedback_text) {
-        cleanFeedback = data.feedback_text;
-      }
+      const cleanFeedback =
+        typeof data.feedback === "string"
+          ? data.feedback.trim()
+          : "No feedback received.";
 
       typeFeedback(cleanFeedback);
     } catch (error) {
@@ -105,22 +85,19 @@ if (!response1.trim()) {
   return (
     <div className="page">
       <div className="card">
-        <h1 className="title">Hammock Springs and Hooke&apos;s Law</h1>
 
+       
 
-        <p className="question-text">
-          Look at the picture below. Explain how the spring stretch changes
-          when force is applied to the hammock.
-        </p>
-    <div className="student-input">
-  <label>Student Name</label>
-  <input
-    type="text"
-    value={studentName}
-    onChange={(e) => setStudentName(e.target.value)}
-    placeholder="Enter your name..."
-  />
-</div>
+        <div className="student-input">
+          <label>Student Name</label>
+          <input
+            type="text"
+            value={studentName}
+            onChange={(e) => setStudentName(e.target.value)}
+            placeholder="Enter your name..."
+          />
+        </div>
+
         <div className="content-row">
           <div className="image-section">
             <img

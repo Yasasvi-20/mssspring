@@ -55,14 +55,6 @@ body {
   justify-content: center;
 }
 
-.question-image {
-  width: 100%;
-  max-height: 430px;
-  object-fit: contain;
-  border-radius: 10px;
-  border: 1px solid #d1d5db;
-  background: white;
-}
 
 .answer-section {
   display: flex;
@@ -159,4 +151,25 @@ button:disabled {
   border: 1px solid #bfc7d5;
   border-radius: 6px;
   font-size: 16px;
+}
+
+.scenario-text {
+  font-size: 28px;
+  line-height: 1.6;
+  font-weight: 500;
+  margin-bottom: 20px;
+}
+
+.bold-question {
+  font-size: 28px;
+  line-height: 1.5;
+  font-weight: 700;
+  margin-top: 16px;
+}
+
+.question-image {
+  width: 100%;
+  max-height: 420px;
+  object-fit: contain;
+  margin: 20px 0;
 }

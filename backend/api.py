@@ -87,47 +87,36 @@ def health():
 # Main endpoint
 @app.post("/analyze")
 async def analyze(req: AnalyzeRequest):
-    try:
-        prompt_template = load_prompt()
+    print("TEXTBOX 1:", req.student_response_1)
+    print("TEXTBOX 2:", req.student_response_2)
 
-        prompt = prompt_template.replace(
-            "{{student_response_1}}", req.student_response_1
-        ).replace(
-            "{{student_response_2}}", req.student_response_2 or ""
-        )
+    prompt_template = load_prompt()
 
-        # OpenAI call
-        response = client.chat.completions.create(
-            model="gpt-4o-mini",
-            messages=[
-                {
-                    "role": "system",
-                    "content": "You are a helpful educational feedback assistant."
-                },
-                {
-                    "role": "user",
-                    "content": prompt
-                }
-            ],
-            temperature=0.3
-        )
+    prompt = prompt_template.replace("{response}", req.student_response_1)
 
-        feedback_text = response.choices[0].message.content
+    response = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[
+            {
+                "role": "system",
+                "content": """
+You are a science tutor giving personalized formative feedback.
+Evaluate ONLY the student's Text Box 1 answer.
+Do NOT evaluate Text Box 2.
+Follow the rubric and feedback guidelines exactly.
+Return only the JSON requested by the prompt.
+"""
+            },
+            {
+                "role": "user",
+                "content": prompt
+            }
+        ],
+        temperature=0.3
+    )
 
-        # Save to Supabase
-        saved_row = await save_to_supabase(
-            req.student_name,
-            req.student_response_1,
-            req.student_response_2,
-            feedback_text
-        )
+    raw_output = response.choices[0].message.content.strip()
 
-        return {
-            "feedback": feedback_text,
-            "saved": True,
-            "supabase_row": saved_row
-        }
-
-    except Exception as e:
-        print("ERROR IN /analyze:", str(e))
-        raise HTTPException(status_code=500, detail=str(e))
+    return {
+        "feedback": raw_output
+    }
