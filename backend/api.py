@@ -5,21 +5,18 @@ from dotenv import load_dotenv
 from openai import OpenAI
 import httpx
 import os
+import json
 
-# Load environment variables
 load_dotenv()
 
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_SERVICE_ROLE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
 
-# OpenAI client
 client = OpenAI(api_key=OPENAI_API_KEY)
 
-# FastAPI app
 app = FastAPI()
 
-# CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -28,28 +25,61 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Request schema
 class AnalyzeRequest(BaseModel):
-    student_name: str
+    prolific_id: str
     student_response_1: str
-    student_response_2: str = ""  # optional
+    student_response_2: str = ""
 
 
-# Load prompt
 def load_prompt():
     with open("prompts/feedback_prompt.txt", "r", encoding="utf-8") as f:
         return f.read()
 
 
-# Save to Supabase
-async def save_to_supabase(student_name: str, student_response_1: str, student_response_2: str, feedback_text: str):
+def clean_feedback_output(raw_output: str) -> str:
+    try:
+        parsed = json.loads(raw_output)
+
+        if isinstance(parsed, dict):
+            feedback = (
+                parsed.get("feedback")
+                or parsed.get("Feedback")
+                or parsed.get("feedback_text")
+                or parsed.get("message")
+                or raw_output
+            )
+        else:
+            feedback = raw_output
+
+    except json.JSONDecodeError:
+        feedback = raw_output
+        feedback = feedback.replace('"level": 1,', "")
+        feedback = feedback.replace('"level": "1",', "")
+        feedback = feedback.replace("'level': 1,", "")
+        feedback = feedback.replace("'level': '1',", "")
+        feedback = feedback.replace('"feedback":', "")
+        feedback = feedback.replace("'feedback':", "")
+        feedback = feedback.replace("{", "")
+        feedback = feedback.replace("}", "")
+        feedback = feedback.replace('"', "")
+        feedback = feedback.replace("'", "")
+        feedback = feedback.strip()
+
+    return feedback.replace("undefined", "").strip()
+
+
+async def save_to_supabase(
+    prolific_id: str,
+    student_response_1: str,
+    student_response_2: str,
+    feedback_text: str
+):
     if not SUPABASE_URL or not SUPABASE_SERVICE_ROLE_KEY:
         raise HTTPException(
             status_code=500,
             detail="Supabase environment variables are missing."
         )
 
-    # IMPORTANT: use correct table name
     url = f"{SUPABASE_URL}/rest/v1/student_data"
 
     headers = {
@@ -60,7 +90,7 @@ async def save_to_supabase(student_name: str, student_response_1: str, student_r
     }
 
     payload = {
-        "student_name": student_name,
+        "prolific_id": prolific_id,
         "student_response_1": student_response_1,
         "student_response_2": student_response_2,
         "feedback_text": feedback_text,
@@ -78,21 +108,22 @@ async def save_to_supabase(student_name: str, student_response_1: str, student_r
     return response.json()
 
 
-# Health check
 @app.get("/health")
 def health():
     return {"status": "ok"}
 
 
-# Main endpoint
 @app.post("/analyze")
 async def analyze(req: AnalyzeRequest):
+    print("PROLIFIC ID:", req.prolific_id)
     print("TEXTBOX 1:", req.student_response_1)
     print("TEXTBOX 2:", req.student_response_2)
 
     prompt_template = load_prompt()
 
-    prompt = prompt_template.replace("{response}", req.student_response_1)
+    prompt = prompt_template.replace(
+        "{{student_response_1}}", req.student_response_1
+    )
 
     response = client.chat.completions.create(
         model="gpt-4o-mini",
@@ -100,11 +131,16 @@ async def analyze(req: AnalyzeRequest):
             {
                 "role": "system",
                 "content": """
-You are a science tutor giving personalized formative feedback.
-Evaluate ONLY the student's Text Box 1 answer.
+You are a science tutor giving personalized feedback.
+
+You must evaluate ONLY the student's Text Box 1 answer.
 Do NOT evaluate Text Box 2.
-Follow the rubric and feedback guidelines exactly.
-Return only the JSON requested by the prompt.
+Do NOT give the same feedback for every student.
+Your feedback must directly mention the student's exact idea or mistake.
+
+Return ONLY the feedback text.
+Do NOT return JSON.
+Do NOT include keys like level, feedback, score, or label.
 """
             },
             {
@@ -112,11 +148,19 @@ Return only the JSON requested by the prompt.
                 "content": prompt
             }
         ],
-        temperature=0.3
+        temperature=0.8
     )
 
     raw_output = response.choices[0].message.content.strip()
+    feedback = clean_feedback_output(raw_output)
+
+    await save_to_supabase(
+        prolific_id=req.prolific_id,
+        student_response_1=req.student_response_1,
+        student_response_2=req.student_response_2,
+        feedback_text=feedback
+    )
 
     return {
-        "feedback": raw_output
+        "feedback": feedback
     }
