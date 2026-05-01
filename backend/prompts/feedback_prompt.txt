@@ -1,0 +1,111 @@
+prompt = f"""Evaluate a student's response to a physics question that measures blended math-science sensemaking competency based on a rubric then provide formative feedback. 
+<student_response>
+{response}
+</student_response>
+<rubric>
+{self.rubric}
+</rubric>
+Your task has TWO parts:
+PART 1: Assign a level based on the rubric
+PART 2: Generate succinct, formative feedback to help the student progress.
+<feedback_guidelines>
+GENERAL GUIDELINES:
+- Acknowledge what the student did well (strengths at their current level)
+- Provide a guiding question or brief hint but NEVER THE ANSWER to scaffold students' revision of their response to reach the next level
+- When a student's response contains an element that needs revision (e.g., an incomplete or inaccurate equation), use language that directs them to reexamine or revisit that specific element. Do NOT simply ask them to "add more" or "strengthen" a response that contains something needing correction as this implies the existing work is sound.
+- Avoid language like "correct," "incorrect," "right," or "wrong" — instead use terms like "reexamine," "revisit," "reconsider," or "take another look at" to signal that revision is needed
+- Mirror the student's own language and terminology. Do NOT introduce variable names, physics terms, or concepts the student has not used in their response
+- Do not refer to the doubling pattern described in the problem statement unless the student mentioned it
+- Keep feedback to 2-3 sentences
+- Use a supportive, growth-oriented tone
+
+
+LEVEL-SPECIFIC FEEDBACK:
+For Level 0 students:
+- Prompt them to identify what variables are relevant in the hammock scenario and how they are related to each other qualitatively
+For Level 1 students:
+- Prompt them to identify both key variables involved and describe the quantitative pattern between the variables (e.g., as one variable changes, by how much does the other variable change?), so they can reach level 2a
+For Level 2 students:
+- Level 2a (Proportional Description Without Equation): Prompt them to translate the quantitative pattern they described into a mathematical equation so they can reach level 3b. Do not specify variables, symbols, number of terms, or any structural hints about the equation.
+- Level 2b (Equation + Qualitative Description): Prompt them to use their equation to quantitatively explain the pattern between the variables described in the problem so they can reach level 3b (e.g., how does your equation explain the pattern described in the problem?). Do not ask for numerical examples or predictions, as no numerical values are provided in the problem.
+For Level 3 students:
+- Level 3a (Equation + Doubling Pattern): Guide them from noting the doubling pattern to describing how the variables are related to each using a generalized quantitative term so they can reach level 3b
+- Level 3b (Equation + Quantitative Description): Acknowledge mastery and tell students they do not need to revise their response. For extension, prompt them to consider how their equation could help predict the behavior of springs with a different spring constant.
+</feedback_guidelines>
+<output_format>
+Return your evaluation in this exact JSON format and nothing else:
+{{
+    "level": <0, 1, 2, or 3>,
+    "feedback": "<formative feedback following the guidelines above>"
+}}
+</output_format>
+rubric = """SCORING INSTRUCTIONS:
+Read the student response completely. Evaluate it against each level starting from the highest. Assign the highest level where ALL criteria are met. For split levels (3a/3b, 2a/2b, 1a/1b), output the same numeric level (3, 2, or 1).
+
+CRITERIA (referenced across multiple levels):
+1) A valid equation must include:
+- Key variable 1: force/weight/mass applied on spring
+- Key variable 2: spring stretch distance/displacement/length
+- A coefficient term (k, spring constant, strength, stretchiness, etc.)
+Both symbolic format (e.g., F = kx) and word format (e.g., "force equals spring constant times distance") are acceptable.
+Invalid examples: "w = s" (missing coefficient), "Hooke's Law" (equation not provided)
+2) A valid quantitative description must include:
+- Quantitative description of the relationship between the two key variables using terms like “proportional,” “linear,” “directly related,” “correlated.”
+3) A valid qualitative description must include:
+- Qualitative description of the relationship between the two key variables using terms like “more weight leads to more stretch,” “stretch depends on force applied,” and “when force increases spring length increases.” 
+
+LEVELS:
+Level 3b - Equation + Quantitative Description
+Must have BOTH:
+- A valid equation 
+- Quantitative description of the relationship between the two key variables
+Examples:
+- "F = kx; The spring stretch distance is proportional to the force applied."
+- "Stretch = weight × spring coefficient, showing a linear relationship between weight and spring’s stretch."
+
+Level 3a - Equation + Doubling Pattern
+Must have BOTH:
+- A valid equation 
+- Reference to the doubling pattern between weight and spring stretch mentioned in the problem statement
+Examples:
+-  "Weight = (a property of the spring) × (spring displacement). Doubling the weight would double the stretch."
+- "Stretch distance = some spring stiffness factor × mass. If you double mass on the hammock, stretch distance doubles."
+
+Level 2a - Equation + Qualitative Description:
+Must have BOTH:
+- A valid equation 
+- Qualitative description of the relationship between the two key variables
+But MISSING: Quantitative/proportional language or doubling pattern
+Example:
+- "Weight = k × displacement, more weight leads to more stretch"
+
+Level 2b - Quantitative Description Without Equation:
+- Quantitative description of the relationship between the two key variables
+But MISSING: A valid equation
+Example:
+- "The springs stretch proportionally to the weight in the hammock"
+
+Level 1a - Variable Identification and/or Qualitative Description:
+- Mentions any key variable (force/tension/weight/mass, spring stretch distance/displacement/length, spring constant/spring strength/spring property)
+- May include a qualitative description of the relationship 
+Examples:
+- "The new springs stretch more than the original ones due to their weaker tension."
+- "Adding more weight makes the spring stretch further."
+
+Level 1b - Restatement of Given Information:
+- Restates the doubling pattern from the problem statement without adding mathematical or conceptual insight
+Examples:
+- "Double the weight would double the spring stretch distance"
+
+Level 0 - No Meaningful Response
+- No response or extremely fragmentary response
+- Only mentions unrelated physics concepts 
+Examples:
+- "ka"
+- "Newton's Third Law"
+
+EVALUATION RULES:
+- Base evaluation only on explicitly stated information, not implications
+- Accept non-standard language and terms if the physics meaning is clear
+- Level 0 is reserved for completely irrelevant or empty responses"""
+
