@@ -197,7 +197,7 @@ pattern: the stretch distance doubled if the weight doubled.
         {showTextbox2 && (
           <>
             <textarea
-              className="answer-box-v2"
+              className="answer-box"
               value={response2}
               onChange={(e) => setResponse2(e.target.value)}
               placeholder="Textbox 2: Improve your answer"
