@@ -16,6 +16,23 @@ function App() {
       ? "http://127.0.0.1:8000"
       : "https://backend-clbs.onrender.com";
 
+  // ✅ Scenario text (FULL paragraph)
+  const scenarioText = `
+A group of friends set up a hammock using springs attached to a metal frame.
+After using the hammock for a few days, the friends noticed that the springs
+stretched to a different distance when different people used the hammock.
+They noticed that doubling the weight of a person would cause the springs
+to stretch twice as far.
+
+The friends initially thought it was a problem with the springs and ordered
+a new set. The new set of springs stretched even more but showed the same
+pattern: the stretch distance doubled if the weight doubled.
+`;
+
+  // ✅ Highlighted question
+  const questionText =
+    "Can you suggest a mathematical relationship between the variables in this problem that could explain why the new set of springs stretches more than the original springs? Justify your answer.";
+
   const extractFeedback = (data) => {
     let cleanFeedback = "No feedback received.";
 
@@ -57,10 +74,8 @@ function App() {
         return;
       }
 
-      const currentWord = words[index];
-
       setFeedback((prev) =>
-        prev ? prev + " " + currentWord : currentWord
+        prev ? prev + " " + words[index] : words[index]
       );
 
       index++;
@@ -90,25 +105,21 @@ function App() {
           "Content-Type": "application/json"
         },
         body: JSON.stringify({
-        prolific_id: prolificId,
-        student_response_1: response1,
-        student_response_2: ""
+          prolific_id: prolificId,
+          student_response_1: response1,
+          student_response_2: ""
         })
       });
 
-      if (!res.ok) {
-        throw new Error("Backend error");
-      }
+      if (!res.ok) throw new Error("Backend error");
 
       const data = await res.json();
-      console.log("Backend response:", data);
-
       const cleanFeedback = extractFeedback(data);
       typeFeedback(cleanFeedback);
     } catch (error) {
       console.error(error);
       setShowFeedback(true);
-      setFeedback("Something went wrong. Please check if the backend is running.");
+      setFeedback("Something went wrong. Please check backend.");
     } finally {
       setLoading(false);
     }
@@ -116,34 +127,38 @@ function App() {
 
   const handleResubmit = () => {
     if (!response2.trim()) {
-      alert("Please enter your improved answer in Textbox 2.");
+      alert("Please enter your improved answer.");
       return;
     }
 
-    alert("Thank you! Your response has been submitted.");
+    alert("Thank you for submitting your answer, please close the window and return to the survey.");
   };
 
   return (
     <div className="page">
       <div className="card">
 
-        
+        {/* ✅ Scenario + Question Section */}
+        <div className="prompt-section">
 
-        
+          <p className="scenario-text">
+            {scenarioText}
+          </p>
 
+          <p className="highlighted-question">
+            {questionText}
+          </p>
+
+        </div>
+
+        {/* Image */}
         <img
           src="/question.png"
           alt="Hammock spring question"
           className="question-image"
         />
 
-        <p className="main-question">
-          Can you suggest a mathematical relationship between the variables in
-          this problem that could explain why the new set of springs stretches
-          more than the original springs? Justify your answer.
-        </p>
-
-        {/*  Prolific ID */}
+        {/* Prolific ID */}
         <div className="student-input">
           <label>Prolific ID</label>
           <input
@@ -154,6 +169,7 @@ function App() {
           />
         </div>
 
+        {/* Textbox 1 */}
         <textarea
           className="answer-box"
           value={response1}
@@ -169,6 +185,7 @@ function App() {
           {loading ? "Generating Feedback..." : "Submit"}
         </button>
 
+        {/* Feedback */}
         {showFeedback && (
           <div className="feedback-box">
             <div className="feedback-label">Feedback</div>
@@ -176,6 +193,7 @@ function App() {
           </div>
         )}
 
+        {/* Textbox 2 */}
         {showTextbox2 && (
           <>
             <textarea
