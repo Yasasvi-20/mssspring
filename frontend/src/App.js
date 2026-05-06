@@ -16,7 +16,6 @@ function App() {
       ? "http://127.0.0.1:8000"
       : "https://backend-clbs.onrender.com";
 
-  // ✅ Scenario text (FULL paragraph)
   const scenarioText = `
 A group of friends set up a hammock using springs attached to a metal frame.
 After using the hammock for a few days, the friends noticed that the springs
@@ -29,10 +28,10 @@ a new set. The new set of springs stretched even more but showed the same
 pattern: the stretch distance doubled if the weight doubled.
 `;
 
-  // ✅ Highlighted question
   const questionText =
     "Can you suggest a mathematical relationship between the variables in this problem that could explain why the new set of springs stretches more than the original springs? Justify your answer.";
 
+  // ✅ CLEAN feedback extractor
   const extractFeedback = (data) => {
     let cleanFeedback = "No feedback received.";
 
@@ -54,17 +53,25 @@ pattern: the stretch distance doubled if the weight doubled.
     }
 
     return cleanFeedback
-      .replace(/undefined/g, "")
+      .replace(/\bundefined\b/g, "")
+      .replace(/\bnull\b/g, "")
       .replace(/^["'{\s]+|["'}\s]+$/g, "")
       .trim();
   };
 
+  // ✅ FIXED typing animation (no undefined bug)
   const typeFeedback = (text) => {
     setFeedback("");
     setShowFeedback(true);
     setShowTextbox2(false);
 
-    const words = text.split(" ").filter(Boolean);
+    const words = text
+      .replace(/\bundefined\b/g, "")
+      .replace(/\bnull\b/g, "")
+      .trim()
+      .split(" ")
+      .filter(Boolean);
+
     let index = 0;
 
     const interval = setInterval(() => {
@@ -74,8 +81,15 @@ pattern: the stretch distance doubled if the weight doubled.
         return;
       }
 
+      const currentWord = words[index];
+
+      if (!currentWord) {
+        index++;
+        return;
+      }
+
       setFeedback((prev) =>
-        prev ? prev + " " + words[index] : words[index]
+        prev ? prev + " " + currentWord : currentWord
       );
 
       index++;
@@ -131,34 +145,26 @@ pattern: the stretch distance doubled if the weight doubled.
       return;
     }
 
-    alert("Thank you for submitting your answer, please close the window and return to the survey.");
+    alert(
+      "Thank you for submitting your answer, please close the window and return to the survey."
+    );
   };
 
   return (
     <div className="page">
       <div className="card">
 
-        {/* ✅ Scenario + Question Section */}
         <div className="prompt-section">
-
-          <p className="scenario-text">
-            {scenarioText}
-          </p>
-
-          <p className="highlighted-question">
-            {questionText}
-          </p>
-
+          <p className="scenario-text">{scenarioText}</p>
+          <p className="highlighted-question">{questionText}</p>
         </div>
 
-        {/* Image */}
         <img
           src="/question.png"
           alt="Hammock spring question"
           className="question-image"
         />
 
-        {/* Prolific ID */}
         <div className="student-input">
           <label>Prolific ID</label>
           <input
@@ -169,7 +175,6 @@ pattern: the stretch distance doubled if the weight doubled.
           />
         </div>
 
-        {/* Textbox 1 */}
         <textarea
           className="answer-box"
           value={response1}
@@ -185,7 +190,6 @@ pattern: the stretch distance doubled if the weight doubled.
           {loading ? "Generating Feedback..." : "Submit"}
         </button>
 
-        {/* Feedback */}
         {showFeedback && (
           <div className="feedback-box">
             <div className="feedback-label">Feedback</div>
@@ -193,7 +197,6 @@ pattern: the stretch distance doubled if the weight doubled.
           </div>
         )}
 
-        {/* Textbox 2 */}
         {showTextbox2 && (
           <>
             <textarea
