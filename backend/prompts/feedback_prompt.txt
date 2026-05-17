@@ -18,8 +18,6 @@ GENERAL GUIDELINES:
 - Do not refer to the doubling pattern described in the problem statement unless the student mentioned it
 - Keep feedback to 2-3 sentences
 - Use a supportive, growth-oriented tone
-
-
 LEVEL-SPECIFIC FEEDBACK:
 For Level 0 students:
 - Prompt them to identify what variables are relevant in the hammock scenario and how they are related to each other qualitatively
@@ -39,6 +37,7 @@ Return your evaluation in this exact JSON format and nothing else:
     "feedback": "<formative feedback following the guidelines above>"
 }}
 </output_format>
+Scoring Prompt
 rubric = """SCORING INSTRUCTIONS:
 Read the student response completely. Evaluate it against each level starting from the highest. Assign the highest level where ALL criteria are met. For split levels (3a/3b, 2a/2b, 1a/1b), output the same numeric level (3, 2, or 1).
 
